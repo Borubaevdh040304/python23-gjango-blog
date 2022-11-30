@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -5,6 +6,7 @@ from rest_framework.response import Response
 from .models import Post
 from .serializers import PostSerializer
 
+User = get_user_model()
 
 @api_view(['GET'])
 def post_list(request):
@@ -34,3 +36,18 @@ def delete_post(request, id):
     post = get_object_or_404(Post, id=id)
     post.delete()
     return Response(status=204)
+
+@api_view(['GET'])
+def filter_by_user(request, u_id):
+    # queryset = Post.objects.filter(author__id=u_id)
+    author = get_object_or_404(User, id=u_id)
+    queryset = Post.objects.filter(author=author)
+    serializer = PostSerializer(queryset, many=True)
+    return Response(serializer.data, status=200)
+
+@api_view(['GET'])
+def search(request):
+    q = request.query_params.get('q')
+    queryset = Post.objects.filter(body__icontains=q)
+    serializer = PostSerializer(queryset, many=True)
+    return Response(serializer.data, status=200)
